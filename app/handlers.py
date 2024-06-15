@@ -212,10 +212,10 @@ async def process_quiz_correct_option(callback_query: CallbackQuery, state: FSMC
                         await bot.forward_message(sub, from_chat_id=first_sub, message_id=message.message_id)
                     except TelegramForbiddenError:
                         await md.unsubscribe(sub)
-                        continue  # Пропустить этого подписчика, если у бота нет разрешения на отправку сообщений
+                        continue 
             except TelegramForbiddenError:
                 await md.unsubscribe(first_sub)
-                pass  # Пропустить первого подписчика, если у бота нет разрешения на отправку сообщений
+                pass
 
         reply_markup = ReplyKeyboardMarkup(keyboard=kb.moderator_kb, resize_keyboard=True)
         await bot.send_message(callback_query.from_user.id, "Рассылка и викторина отправлены!",
