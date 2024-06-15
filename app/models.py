@@ -21,7 +21,7 @@ async def connection_start():
     async with (await get_connection()).cursor() as cur:
         await cur.execute("""
             CREATE TABLE IF NOT EXISTS users (
-                User_ID INT NOT NULL,
+                User_ID BIGINT NOT NULL,
                 isSubscribed BOOLEAN NOT NULL DEFAULT 0,
                 isModerator BOOLEAN NOT NULL DEFAULT 0,
                 correctAnswers INT NOT NULL DEFAULT 0,

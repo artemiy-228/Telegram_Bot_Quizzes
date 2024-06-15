@@ -212,7 +212,7 @@ async def process_quiz_correct_option(callback_query: CallbackQuery, state: FSMC
                         await bot.forward_message(sub, from_chat_id=first_sub, message_id=message.message_id)
                     except TelegramForbiddenError:
                         await md.unsubscribe(sub)
-                        continue 
+                        continue
             except TelegramForbiddenError:
                 await md.unsubscribe(first_sub)
                 pass
