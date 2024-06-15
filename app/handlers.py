@@ -183,7 +183,6 @@ async def process_quiz_correct_option(callback_query: CallbackQuery, state: FSMC
 
     subs = await md.get_subscribers()
     try:
-        # Рассылка контента перед викториной
         if 'distribution_text' in data:
             await distribute_content(bot, subs, distribution_text=data['distribution_text'])
         elif 'distribution_photo' in data:
@@ -195,20 +194,28 @@ async def process_quiz_correct_option(callback_query: CallbackQuery, state: FSMC
 
         if subs:
             first_sub = subs.pop(0)
-            message = await bot.send_poll(
-                first_sub,
-                question=question,
-                options=options,
-                type=PollType.QUIZ,
-                is_anonymous=False,
-                correct_option_id=correct_option_id,
-                allows_multiple_answers=False
-            )
-            poll_id = message.poll.id
-            await md.save_quiz(poll_id, correct_option_id)
+            try:
+                message = await bot.send_poll(
+                    first_sub,
+                    question=question,
+                    options=options,
+                    type=PollType.QUIZ,
+                    is_anonymous=False,
+                    correct_option_id=correct_option_id,
+                    allows_multiple_answers=False
+                )
+                poll_id = message.poll.id
+                await md.save_quiz(poll_id, correct_option_id)
 
-            for sub in subs:
-                await bot.forward_message(sub, from_chat_id=first_sub, message_id=message.message_id)
+                for sub in subs:
+                    try:
+                        await bot.forward_message(sub, from_chat_id=first_sub, message_id=message.message_id)
+                    except TelegramForbiddenError:
+                        await md.unsubscribe(sub)
+                        continue  # Пропустить этого подписчика, если у бота нет разрешения на отправку сообщений
+            except TelegramForbiddenError:
+                await md.unsubscribe(first_sub)
+                pass  # Пропустить первого подписчика, если у бота нет разрешения на отправку сообщений
 
         reply_markup = ReplyKeyboardMarkup(keyboard=kb.moderator_kb, resize_keyboard=True)
         await bot.send_message(callback_query.from_user.id, "Рассылка и викторина отправлены!",
@@ -218,6 +225,18 @@ async def process_quiz_correct_option(callback_query: CallbackQuery, state: FSMC
 
     await callback_query.message.edit_reply_markup()
     await state.set_state(Form.message)
+
+@router.poll_answer()
+async def handle_poll_answer(poll_answer: PollAnswer, bot: Bot) -> None:
+    poll_id = poll_answer.poll_id
+    selected_option_id = poll_answer.option_ids[0]
+    user_id = poll_answer.user.id
+
+    correct_option_id = await md.get_correct_option_id(poll_id)
+
+    if selected_option_id == correct_option_id:
+        await md.update_correct_answers(user_id)
+        await bot.send_message(user_id, "Поздравляем! Вы получили 1 балл")
 
 
 @router.message(Moderators(), F.text == 'Отправить Рассылку')

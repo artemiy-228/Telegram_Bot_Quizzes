@@ -80,6 +80,13 @@ async def get_moderators():
         moderators = [row[0] for row in await cur.fetchall()]
         return moderators
 
+async def get_all_users():
+    async with (await get_connection()).cursor() as cur:
+        await cur.execute("SELECT User_ID FROM users")
+        users = [row[0] for row in await cur.fetchall()]
+        return users
+
+
 async def update_correct_answers(user_id):
     async with (await get_connection()).cursor() as cur:
         await cur.execute("UPDATE users SET correctAnswers = correctAnswers + 1 WHERE User_ID=%s", (user_id,))
